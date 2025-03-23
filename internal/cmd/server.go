@@ -3,7 +3,8 @@ package cmd
 import (
 	"net/http"
 
-	"github.com/CelticAlreadyUse/article-story-service/internal/database"
+	"github.com/CelticAlreadyUse/article-story-service/internal/config"
+	"github.com/CelticAlreadyUse/article-story-service/internal/database/mongodb"
 	http_handler "github.com/CelticAlreadyUse/article-story-service/internal/handler/http"
 	"github.com/CelticAlreadyUse/article-story-service/internal/repository"
 	"github.com/CelticAlreadyUse/article-story-service/internal/usecase"
@@ -11,22 +12,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var startServerCmd = &cobra.Command{
-	Use: "httpsrv",
+	Use:   "httpsrv",
 	Short: "httpsrv is a command to run http server",
-	Run: func (cmd *cobra.Command,args []string)  {
-		db:= database.MysqlConnection()
-		storyRepository := repository.InitStoryStruct(db)
+	Run: func(cmd *cobra.Command, args []string) {
+		dbConn := mongodb.Connect()
+		storyRepository := repository.InitStoryStruct(dbConn)
 		storyUsecase := usecase.InitStoryUsecase(storyRepository)
-		
-		e:= echo.New()
-		
-		e.GET("/ping",func(c echo.Context) error {
-			return c.String(http.StatusOK,"pong")
+		e := echo.New()
+		e.GET("/ping", func(c echo.Context) error {
+			return c.String(http.StatusOK, "pong")
 		})
 		storyHandler := http_handler.InitStoryHandler(storyUsecase)
 		storyHandler.RegisterRoute(e)
-		e.Start(":3080")
+		e.Start(":" + config.PORT_HTTP())
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(startServerCmd)
 }

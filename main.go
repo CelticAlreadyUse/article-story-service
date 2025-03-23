@@ -1,13 +1,10 @@
 package main
-
 import (
-	"github.com/labstack/echo/v4"
+	"github.com/CelticAlreadyUse/article-story-service/internal/cmd"
 )
 
 
 func main() {
-	e := echo.New()
-
-	// Jalankan server
-	e.Logger.Fatal(e.Start(":8080"))
+	cmd.Execute()
 }
+																			
