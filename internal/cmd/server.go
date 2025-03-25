@@ -16,7 +16,9 @@ var startServerCmd = &cobra.Command{
 	Use:   "httpsrv",
 	Short: "httpsrv is a command to run http server",
 	Run: func(cmd *cobra.Command, args []string) {
-		dbConn := mongodb.Connect()
+		dbConn, ctx, cancel := mongodb.Connect()
+		defer cancel()
+		defer dbConn.Client().Disconnect(ctx)
 		storyRepository := repository.InitStoryStruct(dbConn)
 		storyUsecase := usecase.InitStoryUsecase(storyRepository)
 		e := echo.New()

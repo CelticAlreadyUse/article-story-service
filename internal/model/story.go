@@ -9,9 +9,9 @@ import (
 
 type StoryUsecase interface {
 	Create(ctx context.Context, Story Story) error
-	DeleteStoryByID(ctx context.Context, id int64) error
-	UpdateStoryByID(ctx context.Context, id int64, story Story) (Story, error)
-	GetAll(ctx context.Context)
+	DeleteByID(ctx context.Context, id int64) error
+	UpdateByID(ctx context.Context, id int64, story Story) (Story, error)
+	GetAll(ctx context.Context, params SearchParams) ([]Story,string, error)
 	GetStoryByID(ctx context.Context, userID string) (*Story, error)
 }
 type ParamsShowStories struct {
@@ -19,13 +19,14 @@ type ParamsShowStories struct {
 	Offset int
 }
 type StoryRepository interface {
+	GetAll(ctx context.Context, params SearchParams) ([]Story,string, error)
 	Create(ctx context.Context, story Story) error
 	Delete(ctx context.Context, id string)
 	GetByID(ctx context.Context, id primitive.ObjectID) (*Story, error)
 }
 type Story struct {
-	ID			*string    `json:"id,omitempty" bson:"omitempty"` 
-	AuthorID   int64         `json:"author_id" bson:"author_id" validate:"required"`
+	ID         primitive.ObjectID        `json:"id,omitempty" bson:"_id,omitempty"`
+	AuthorID   int64          `json:"author_id" bson:"author_id" validate:"required"`
 	Title      string         `json:"title" bson:"title" validate:"required"`
 	Tags       []string       `json:"tags" bson:"tags"`
 	Created_at time.Time      `json:"created_at" bson:"created_at"`
@@ -38,6 +39,7 @@ const (
 	PARAGRAPH Type = "paragraph"
 	IMAGE     Type = "image"
 )
+
 type StoryElement struct {
 	Type            Type             `json:"type,omitempty" bson:"type"`
 	Text            *string          `json:"text,omitempty" bson:"text,omitempty"`

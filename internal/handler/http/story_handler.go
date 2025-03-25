@@ -2,6 +2,7 @@ package http_handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
 	"github.com/go-playground/validator/v10"
@@ -23,6 +24,7 @@ func (handler *storyHandler) RegisterRoute(e *echo.Echo) {
 	g := e.Group("/v1/story")
 	g.GET("/:id", handler.GetStoryByID)
 	g.POST("/create", handler.CreateStory)
+	g.GET("", handler.GetStories)
 }
 
 func (handler *storyHandler) CreateStory(c echo.Context) error {
@@ -50,5 +52,47 @@ func (handler *storyHandler) GetStoryByID(c echo.Context) error {
 	return c.JSON(http.StatusAccepted, Response{
 		Message: "success",
 		Data:    results,
+	})
+}
+func (handler *storyHandler) GetStories(c echo.Context) error {
+	var Params model.SearchParams
+
+	categoryParams := c.QueryParams()["tags"]
+	if len(categoryParams) > 5 {
+		return echo.NewHTTPError(http.StatusBadRequest, "Maximum of 5 tags allowed")
+	}
+	Params.Tags = []string(categoryParams)
+
+	keyWordParm := c.QueryParam("keyword")
+	if keyWordParm != "" {
+		Params.Keywords = keyWordParm
+	}
+	limitParam := c.QueryParam("limit")
+	if limitParam != "" {
+		limitInt, err := strconv.Atoi(limitParam)
+		if err != nil {
+			return echo.ErrInternalServerError
+		}
+		Params.Limit = int64(limitInt)
+	}
+	cursorParam := c.QueryParam("cursor")
+	if cursorParam != "" {
+		Params.Cursor = cursorParam
+	}
+	stories, nextcsr, err := handler.storyUsecase.GetAll(c.Request().Context(), Params)
+	if err != nil {
+		return echo.ErrBadRequest
+	}
+	if stories == nil{
+		return echo.ErrNotFound
+	}
+	return c.JSON(http.StatusOK, Response{
+		Data:    stories,
+		Message: "success",
+		Metadata: map[string]any{
+			"length":      len(stories),
+			"next_cursor": nextcsr,
+			"has_more":    len(stories) == int(Params.Limit),
+		},
 	})
 }
