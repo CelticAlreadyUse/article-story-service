@@ -22,11 +22,19 @@ func (u *storyUsecase) Create(ctx context.Context, story model.Story) error {
 	})
 	return u.storyRepository.Create(ctx,story) 
 }
-func (u *storyUsecase) DeleteByID(ctx context.Context, id int64) error {
-	panic("implement me!")
+func (u *storyUsecase) DeleteByID(ctx context.Context, id primitive.ObjectID) error {
+	logrus.WithFields(logrus.Fields{
+		"id" : id,
+	})
+	err :=u.storyRepository.Delete(ctx,id)
+	if err !=nil{
+		return err
+	}
+	logrus.Infof("story deleted %v",id)
+	return  u.storyRepository.Delete(ctx,id)
 }
-func (u *storyUsecase) UpdateByID(ctx context.Context, id int64, story model.Story) (model.Story, error) {
-	panic("implement me")
+func (u *storyUsecase) UpdateByID(ctx context.Context, id primitive.ObjectID, story model.Story) (model.Story, error) {
+	panic("iplement me")
 }
 func (u *storyUsecase) GetAll(ctx context.Context,params model.SearchParams) ([]model.Story,string,error) {
 	logrus.WithFields(logrus.Fields{

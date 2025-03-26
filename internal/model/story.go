@@ -9,8 +9,8 @@ import (
 
 type StoryUsecase interface {
 	Create(ctx context.Context, Story Story) error
-	DeleteByID(ctx context.Context, id int64) error
-	UpdateByID(ctx context.Context, id int64, story Story) (Story, error)
+	DeleteByID(ctx context.Context, id primitive.ObjectID) error
+	UpdateByID(ctx context.Context, id primitive.ObjectID, story Story) (Story, error)
 	GetAll(ctx context.Context, params SearchParams) ([]Story,string, error)
 	GetStoryByID(ctx context.Context, userID string) (*Story, error)
 }
@@ -21,7 +21,7 @@ type ParamsShowStories struct {
 type StoryRepository interface {
 	GetAll(ctx context.Context, params SearchParams) ([]Story,string, error)
 	Create(ctx context.Context, story Story) error
-	Delete(ctx context.Context, id string)
+	Delete(ctx context.Context, id primitive.ObjectID) error
 	GetByID(ctx context.Context, id primitive.ObjectID) (*Story, error)
 }
 type Story struct {

@@ -14,7 +14,6 @@ func EncodeCursor(t time.Time, id primitive.ObjectID) string {
 
 	return base64.URLEncoding.EncodeToString(data)
 }
-
 func DecodeCursor(s string) (model.Cursor, error) {
 	data, err := base64.URLEncoding.DecodeString(s)
 	if err != nil {
