@@ -6,6 +6,7 @@ import (
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
 	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,8 +24,9 @@ var validate = validator.New()
 func (handler *storyHandler) RegisterRoute(e *echo.Echo) {
 	g := e.Group("/v1/story")
 	g.GET("/:id", handler.GetStoryByID)
-	g.POST("/create", handler.CreateStory)
+	g.POST("", handler.CreateStory)
 	g.GET("", handler.GetStories)
+	g.DELETE("/:id",handler.DeleteStoryByID)
 }
 
 func (handler *storyHandler) CreateStory(c echo.Context) error {
@@ -94,5 +96,19 @@ func (handler *storyHandler) GetStories(c echo.Context) error {
 			"next_cursor": nextcsr,
 			"has_more":    len(stories) == int(Params.Limit),
 		},
+	})
+}
+func (handler *storyHandler) DeleteStoryByID(c echo.Context)error{
+	id :=c.Param("id")
+	privId,err := primitive.ObjectIDFromHex(id)
+	if err !=nil{
+		return echo.NewHTTPError(http.StatusBadRequest,"failed to get an id")
+	}
+	err = handler.storyUsecase.DeleteByID(c.Request().Context(),privId)	
+	if err !=nil{
+		return echo.NewHTTPError(http.StatusBadRequest,err.Error())
+	}
+	return c.JSON(http.StatusOK, Response{
+		Message: "Successfully deleting story",
 	})
 }

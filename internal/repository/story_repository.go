@@ -33,8 +33,14 @@ func (r *StoryRepository) Create(ctx context.Context, story model.Story) error {
 		return err
 	}
 }
-func (u *StoryRepository) Delete(ctx context.Context, id string) {
-	panic("Implmenet me")
+func (u *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
+	opts := bson.D{primitive.E{Key: "_id", Value: id}}
+	_, err := u.db.Collection("story_service").DeleteOne(ctx, opts)
+	if err != nil {
+		logrus.Error(err.Error())
+		return err
+	}
+	return nil
 }
 func (u *StoryRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*model.Story, error) {
 	var row *model.Story
