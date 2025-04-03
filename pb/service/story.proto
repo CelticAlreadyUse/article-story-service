@@ -14,7 +14,7 @@ message Story {
   }
   
   message StoryElement {
-    Type type = 1;
+    string type = 1;
     optional string text = 2;
     optional ParagraphStyles paragraph_styles = 3;
     optional string url = 4;
@@ -25,42 +25,12 @@ message Story {
   message Stories {
     repeated Story Stories =1;
   }
-  enum Type {
-    UNKNOWN = 0;
-    TEXT = 1;
-    IMAGE = 2;
-    VIDEO = 3;
-  }
 message ParagraphStyles {
-    FontSize font_size = 1;
-    FontStyle font_style = 2;
-    FontStyleQuote font_family = 3;
-  }
-  
-  enum FontSize {
-    STANDARD = 0;
-    HEADING = 1;
-    SUBTITLE = 2;
-  }
-  
-  enum FontStyle {
-    MARKUP = 0;
-    STRONG = 1;
-    BASIC = 2;
-  }
-  
-  enum FontStyleQuote {
-    NORMAL = 0;
-    BLACKQUOTE = 1;
-    PULLQUOTE = 2;
+    string font_size = 1;
+    string font_style = 2;
+    string font_family = 3;
   }
   
   message ImageStyles {
-    ImageSize image_size = 1;
-  }
-  
-  enum ImageSize {
-    DEFAULT = 0;
-    OUTSIDE_COLUMN = 1;
-    FULL_SIZE = 2;
+    string image_size = 1;
   }

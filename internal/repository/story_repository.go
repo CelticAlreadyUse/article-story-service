@@ -21,17 +21,15 @@ func InitStoryStruct(collection *mongo.Database) model.StoryRepository {
 	return &StoryRepository{db: collection}
 }
 
-func (r *StoryRepository) Create(ctx context.Context, story model.Story) error {
+func (r *StoryRepository) Create(ctx context.Context, story model.Story) (*model.Story, error) {
 	story.Created_at = time.Now()
-	insertResults, err := r.db.Collection("story_service").InsertOne(ctx, story)
+	res, err := r.db.Collection("story_service").InsertOne(ctx, story)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if _, ok := insertResults.InsertedID.(primitive.ObjectID); ok {
-		return nil
-	} else {
-		return err
-	}
+	logrus.Info(res.InsertedID)
+	story.ID = res.InsertedID.(primitive.ObjectID)
+	return &story, nil
 }
 func (u *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	opts := bson.D{primitive.E{Key: "_id", Value: id}}
@@ -75,16 +73,14 @@ func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams)
 			},
 		}
 	}
-
-	// Validate and set default limit
 	if params.Limit <= 0 || params.Limit > 100 {
 		params.Limit = 10
 	}
-
 	opts := options.Find().
-		SetSort(bson.D{{"created_at", 1}, {"_id", 1}}).
+		SetSort(bson.D{
+			{Key: "created_at", Value: -1},
+			{Key: "_id", Value: 1}}).
 		SetLimit(int64(params.Limit))
-
 	rows, err := u.db.Collection("story_service").Find(ctx, filter, opts)
 	if err != nil {
 		logrus.Error(err)
@@ -104,4 +100,37 @@ func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams)
 	}
 
 	return stories, nextCursor, nil
+}
+func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, body model.Story) (*model.Story, int64, error) {
+	body.Updated_at = time.Now()
+	newStory := bson.D{
+		{Key: "$set", Value: bson.D{
+			{Key: "title", Value: body.Title},
+			{Key: "tags", Value: body.Tags},
+			{Key: "content", Value: body.Content},
+			{Key: "updated_at", Value: body.Updated_at},
+		}},
+	}
+	filter := bson.D{{Key: "_id", Value: id}}
+	results, err := u.db.Collection("story_service").UpdateOne(ctx, filter, newStory)
+	if err != nil {
+		logrus.Error(err)
+		return nil, 0, err
+	}
+
+	return &body, results.ModifiedCount, nil
+}
+
+func (u *StoryRepository) GetStoriesByUserID(ctx context.Context, author_id int64) ([]*model.Story, error) {
+	filter := bson.M{"author_id": author_id}
+	storyDB, err := u.db.Collection("story_service").Find(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	defer storyDB.Close(ctx)
+	var storeis []*model.Story
+	if err = storyDB.All(ctx, &storeis); err != nil {
+		return nil, err
+	}
+	return storeis, nil
 }

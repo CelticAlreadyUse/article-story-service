@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
 	"github.com/sirupsen/logrus"
@@ -16,48 +17,73 @@ func InitStoryUsecase(repo model.StoryRepository) model.StoryUsecase {
 	return &storyUsecase{storyRepository: repo}
 }
 
-func (u *storyUsecase) Create(ctx context.Context, story model.Story) error {
+func (u *storyUsecase) Create(ctx context.Context, story model.Story) (*model.Story, error) {
 	logrus.WithFields(logrus.Fields{
 		"data": story,
 	})
-	return u.storyRepository.Create(ctx,story) 
+	return u.storyRepository.Create(ctx, story)
 }
-func (u *storyUsecase) DeleteByID(ctx context.Context, id primitive.ObjectID) error {
+func (u *storyUsecase) Delete(ctx context.Context, id primitive.ObjectID) error {
 	logrus.WithFields(logrus.Fields{
-		"id" : id,
+		"id": id,
 	})
-	err :=u.storyRepository.Delete(ctx,id)
-	if err !=nil{
+	err := u.storyRepository.Delete(ctx, id)
+	if err != nil {
 		return err
 	}
-	logrus.Infof("story deleted %v",id)
-	return  u.storyRepository.Delete(ctx,id)
+	logrus.Infof("story deleted %v", id)
+	return u.storyRepository.Delete(ctx, id)
 }
-func (u *storyUsecase) UpdateByID(ctx context.Context, id primitive.ObjectID, story model.Story) (model.Story, error) {
-	panic("iplement me")
-}
-func (u *storyUsecase) GetAll(ctx context.Context,params model.SearchParams) ([]model.Story,string,error) {
+func (u *storyUsecase) Update(ctx context.Context, id primitive.ObjectID, storyBody model.Story) (*model.Story, int64, error) {
 	logrus.WithFields(logrus.Fields{
-		"params" : params,
+		"_id":  id,
+		"body": storyBody,
 	})
-	stories,nextcsr,err := u.storyRepository.GetAll(ctx,params)
-	if err !=nil{
-		logrus.Error(err.Error())
-		return nil,"",err
+	story, amount, err := u.storyRepository.Update(ctx, id, storyBody)
+	if err != nil {
+		logrus.Error(err)
+		return nil, 0, err
 	}
-	return stories,nextcsr,nil
+	if amount == 0 {
+		logrus.Warn("no data been updated")
+		return nil, 0, errors.New("0 data been updated")
+	}
+	return story, amount, nil
+}
+func (u *storyUsecase) GetAll(ctx context.Context, params model.SearchParams) ([]model.Story, string, error) {
+	logrus.WithFields(logrus.Fields{
+		"params": params,
+	})
+	stories, nextcsr, err := u.storyRepository.GetAll(ctx, params)
+	if err != nil {
+		logrus.Error(err.Error())
+		return nil, "", err
+	}
+	return stories, nextcsr, nil
 }
 func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.Story, error) {
 	logrus.WithFields(logrus.Fields{
-		"id" : userID,
+		"id": userID,
 	})
-	oId,err := primitive.ObjectIDFromHex(userID)
-	if err !=nil{
-		return nil,err
+	oId, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, err
 	}
-	story,err := u.storyRepository.GetByID(ctx,oId)
-		if err !=nil{
-			return nil,err
-		}
-	return story,nil
+	story, err := u.storyRepository.GetByID(ctx, oId)
+	if err != nil {
+		return nil, err
+	}
+	return story, nil
+}
+
+func (u *storyUsecase) GetStoriesByUserID(ctx context.Context, id int64) ([]*model.Story, error) {
+	logrus.WithFields(logrus.Fields{
+		"user_id": id,
+	})
+	stories, err := u.storyRepository.GetStoriesByUserID(ctx, id)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+	return stories, nil
 }

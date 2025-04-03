@@ -2,33 +2,6 @@ syntax="proto3";
 package pb.service;
 
 option go_package="pb/service";
-import "pb/service/story.proto";
-
-message StoryFindAllRequest{
-    string keyword = 1;
-    repeated string tags = 2;
-    string cursor = 3;
-    int64 limit=4;
-}
-message CreateStoryRequest{
-    string author_id = 1;
-    string title = 2;
-    repeated string tags = 3;
-   repeated StoryElement content = 4;
-}
-message FindStoryByIDRequest{
-    int64 id = 1;
-}
-message UpdateStoryRequest{
-    int64 id =1;
-    string title=2;
-    repeated string tags = 3;
-    repeated StoryElement content = 4;
-    string author_id = 5;
-}
-message DeleteStoryRequest{
-    string id = 1;
-}
 message GetStoriesByUserIDRequest{
-    string id = 1;
+    int64 id = 1;
 }   
