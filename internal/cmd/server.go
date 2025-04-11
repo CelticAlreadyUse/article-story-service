@@ -5,10 +5,12 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/config"
 	"github.com/CelticAlreadyUse/article-story-service/internal/database/mongodb"
+	mysqldb "github.com/CelticAlreadyUse/article-story-service/internal/database/mysql"
 	grpchandler "github.com/CelticAlreadyUse/article-story-service/internal/handler/grpc"
 	http_handler "github.com/CelticAlreadyUse/article-story-service/internal/handler/http"
 	"github.com/CelticAlreadyUse/article-story-service/internal/repository"
@@ -24,11 +26,14 @@ var startServerCmd = &cobra.Command{
 	Use:   "httpsrv",
 	Short: "httpsrv is a command to run http server",
 	Run: func(cmd *cobra.Command, args []string) {
-		dbConn, ctx, cancel := mongodb.Connect()
+		mongoConn, ctx, cancel := mongodb.Connect()
 		defer cancel()
-		defer dbConn.Client().Disconnect(ctx)
-		storyRepository := repository.InitStoryStruct(dbConn)
+		defer mongoConn.Client().Disconnect(ctx)
+		storyRepository := repository.InitStoryStruct(mongoConn)
 		storyUsecase := usecase.InitStoryUsecase(storyRepository)
+		mysqlConn := mysqldb.MysqlConnection()
+		categoryRepository := repository.InitCategoryRepository(mysqlConn)
+		categoryUsecase := usecase.InitCategoryUsecase(categoryRepository)
 		wg := new(sync.WaitGroup)
 		wg.Add(2)
 		go func() {
@@ -37,8 +42,11 @@ var startServerCmd = &cobra.Command{
 			e.GET("/ping", func(c echo.Context) error {
 				return c.String(http.StatusOK, "pong")
 			})
+			categoryHandler := http_handler.InitCateoryHandler(categoryUsecase)
+
 			storyHandler := http_handler.InitStoryHandler(storyUsecase)
 			storyHandler.RegisterRoute(e)
+			categoryHandler.RegisterRoute(e)
 			e.Start(":" + config.PORT_HTTP())
 		}()
 		go func() {
@@ -56,7 +64,11 @@ var startServerCmd = &cobra.Command{
 				log.Fatalf("failed to serve gRPC server : %v", err)
 			}
 		}()
+		quit := make(chan os.Signal,1)
+		<- quit
+		logrus.Warn("Shutdown signal received")
 		wg.Wait()
+		logrus.Info("All server exited")
 
 	},
 }

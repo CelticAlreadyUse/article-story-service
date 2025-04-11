@@ -12,6 +12,11 @@ type SearchParams struct{
 	Limit int64 `params:"limit" validate:"number"`
 	Cursor string `params:"cursor"`
 }
+type CategoryParams struct{
+	Alph string `params:"alph"`
+	Limit int64 `params:"limit"`
+	Keyword string `params:"keyword"`
+}
 type Pagination struct{
 	Before string
 	HasBefore bool

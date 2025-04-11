@@ -62,45 +62,49 @@ func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams)
 	if params.Cursor != "" {
 		cursor, err := helper.DecodeCursor(params.Cursor)
 		if err != nil {
-			logrus.Error(err)
+			logrus.Error("decode cursor error: ", err)
 			return nil, "", err
 		}
 		filter["$or"] = []bson.M{
-			{"created_at": bson.M{"$gt": cursor.Time}},
+			{"created_at": bson.M{"$lt": cursor.Time}},
 			{
 				"created_at": cursor.Time,
-				"_id":        bson.M{"$gt": cursor.ID},
+				"_id":        bson.M{"$lt": cursor.ID},
 			},
 		}
 	}
 	if params.Limit <= 0 || params.Limit > 100 {
 		params.Limit = 10
 	}
+	queryLimit := params.Limit + 1
 	opts := options.Find().
 		SetSort(bson.D{
 			{Key: "created_at", Value: -1},
-			{Key: "_id", Value: 1}}).
-		SetLimit(int64(params.Limit))
+			{Key: "_id", Value: -1},
+		}).
+		SetLimit(int64(queryLimit))
 	rows, err := u.db.Collection("story_service").Find(ctx, filter, opts)
 	if err != nil {
-		logrus.Error(err)
+		logrus.Error("find error: ", err)
 		return nil, "", err
 	}
 	defer rows.Close(ctx)
 
 	var stories []model.Story
 	if err := rows.All(ctx, &stories); err != nil {
-		logrus.Error(err)
+		logrus.Error("cursor decode error: ", err)
 		return nil, "", err
 	}
 	var nextCursor string
-	if len(stories) == int(params.Limit) {
-		last := stories[len(stories)-1]
+	if len(stories) > int(params.Limit) {
+		last := stories[params.Limit-1]
 		nextCursor = helper.EncodeCursor(last.Created_at, last.ID)
+		stories = stories[:params.Limit]
 	}
 
 	return stories, nextCursor, nil
 }
+
 func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, body model.Story) (*model.Story, int64, error) {
 	body.Updated_at = time.Now()
 	newStory := bson.D{

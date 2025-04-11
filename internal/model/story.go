@@ -36,7 +36,7 @@ type Story struct {
 	ID         primitive.ObjectID        `json:"id,omitempty" bson:"_id,omitempty"`
 	AuthorID   int64          `json:"author_id" bson:"author_id" validate:"required"`
 	Title      string         `json:"title" bson:"title" validate:"required"`
-	Tags       []string       `json:"tags" bson:"tags"`
+	Tags       []string       `json:"tags" bson:"tags" validate:"required"`
 	Created_at time.Time      `json:"created_at" bson:"created_at"`
 	Updated_at time.Time     `json:"updated_at,omitempty" bson:"updated_at,omitempty"`
 	Content    []*StoryElement `json:"content" bson:"content" validate:"required"`

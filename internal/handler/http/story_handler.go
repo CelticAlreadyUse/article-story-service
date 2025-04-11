@@ -15,21 +15,19 @@ import (
 type storyHandler struct {
 	storyUsecase model.StoryUsecase
 }
-
 func InitStoryHandler(storyUsecase model.StoryUsecase) *storyHandler {
 	return &storyHandler{storyUsecase: storyUsecase}
 }
 
-var validate = validator.New()
+var Validate = validator.New()
 
 func (handler *storyHandler) RegisterRoute(e *echo.Echo) {
 	g := e.Group("/v1/story")
-	g.GET("/:id", handler.GetStoryByID)
-	g.POST("", handler.CreateStory)
-	g.GET("", handler.GetStories)
-	g.DELETE("/:id", handler.DeleteStoryByID)
+	g.GET("/:id", handler.GetStoryByID) 
+	g.POST("", handler.CreateStory)   
+	g.GET("", handler.GetStories)  
+	g.DELETE("/:id", handler.DeleteStoryByID) 
 	g.PUT("/:id", handler.UpdateStory)
-	g.GET("/user/:id",handler.GetStoryByAccountID)
 }
 
 // For story to user
@@ -39,7 +37,11 @@ func (handler *storyHandler) CreateStory(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to get body data ")
 	}
-	err = validate.Struct(body)
+	err = Validate.Struct(body)
+
+	if len(body.Content) == 0{
+		return echo.NewHTTPError(http.StatusBadRequest, "content is required")
+	}
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -47,7 +49,7 @@ func (handler *storyHandler) CreateStory(c echo.Context) error {
 	if err != nil {
 		return echo.ErrBadRequest
 	}
-	return c.JSON(http.StatusAccepted, Response{
+	return c.JSON(http.StatusOK, Response{
 		Data:    story,
 		Message: "sucessfully created story",
 	})
@@ -56,7 +58,7 @@ func (handler *storyHandler) GetStoryByID(c echo.Context) error {
 	id := c.Param("id")
 	results, err := handler.storyUsecase.GetStoryByID(c.Request().Context(), id)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "story id not found")
+		return echo.NewHTTPError(http.StatusNotFound, "story id not found")
 	}
 	return c.JSON(http.StatusAccepted, Response{
 		Message: "success",
