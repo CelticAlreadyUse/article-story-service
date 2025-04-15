@@ -110,7 +110,7 @@ func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, bod
 	newStory := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "title", Value: body.Title},
-			{Key: "tags", Value: body.Tags},
+			{Key: "tags", Value: body.Tags_ID},
 			{Key: "content", Value: body.Content},
 			{Key: "updated_at", Value: body.Updated_at},
 		}},

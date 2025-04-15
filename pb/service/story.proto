@@ -8,6 +8,7 @@ message Story {
     int64 author_id = 2;
     string title = 3;
     repeated string tags = 4;
+    repeated int64 tags_id = 8;
     google.protobuf.Timestamp created_at = 5;
     google.protobuf.Timestamp updated_at = 6;
     repeated StoryElement content = 7;

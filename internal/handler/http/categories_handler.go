@@ -2,9 +2,9 @@ package http_handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/helper"
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
@@ -23,8 +23,9 @@ func (handler *CategoryHandler) RegisterRoute(e *echo.Echo) {
 	g := e.Group("/v1/category")
 	g.GET("", handler.GetAll)
 	g.POST("", handler.Create)
-	g.PUT("/:id",handler.Update)
-	g.DELETE("/:id",handler.Delete)
+	g.PUT("/:id", handler.Update)
+	g.DELETE("/:id", handler.Delete)
+	g.GET("/ids", handler.GetByCategoriesIDs)
 }
 func (handler *CategoryHandler) GetAll(c echo.Context) error {
 	var params model.CategoryParams
@@ -45,9 +46,12 @@ func (handler *CategoryHandler) GetAll(c echo.Context) error {
 	if keyWord != "" {
 		params.Keyword = keyWord
 	}
-
-	fmt.Println(params)
+	Categories, err := handler.Categoryusecase.GetAll(c.Request().Context(), params)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
 	return c.JSON(http.StatusOK, Response{
+		Data:    Categories,
 		Message: "sucessfully get category list",
 	})
 }
@@ -88,7 +92,7 @@ func (handler *CategoryHandler) Update(c echo.Context) error {
 	}
 	err = Validate.Struct(body)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest,err.Error())
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -105,15 +109,38 @@ func (handler *CategoryHandler) Update(c echo.Context) error {
 }
 func (handler *CategoryHandler) Delete(c echo.Context) error {
 	id := c.Param("id")
-	idInt,err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return echo.ErrBadRequest
 	}
-	err = handler.Categoryusecase.Delete(c.Request().Context(),int64(idInt))
-	if err !=nil{
-		return echo.NewHTTPError(http.StatusBadRequest,"Failed to delete category")
+	err = handler.Categoryusecase.Delete(c.Request().Context(), int64(idInt))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Failed to delete category")
 	}
 	return c.JSON(http.StatusOK, Response{
 		Message: "sucessfully deleting category",
+	})
+}
+func (handler *CategoryHandler) GetByCategoriesIDs(c echo.Context) error {
+	idParams := c.QueryParam("ids")
+	idStr := strings.Split(idParams, ",")
+	var ids []int64
+	for _, idStr := range idStr {
+		id, err := strconv.Atoi(strings.TrimSpace(idStr))
+		if err == nil {
+			ids = append(ids, int64(id))
+		}
+	}
+	Categories, err := handler.Categoryusecase.GetAllCategoriesByIds(c.Request().Context(), ids)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, ErrorResponse{
+			Error: err.Error(),
+			Message: "failed to get Categories list",
+		})
+	}
+
+	return c.JSON(http.StatusOK, Response{
+		Data:    Categories,
+		Message: "sucessfully get categories list",
 	})
 }

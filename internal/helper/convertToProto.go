@@ -28,7 +28,7 @@ func convertStoryToProto(story *model.Story) *pb.Story {
 		Id:        story.ID.Hex(),
 		Title:     story.Title,
 		AuthorId:  story.AuthorID,
-		Tags:      story.Tags,
+		TagsId:    story.Tags_ID,
 		Content:   convertContentToProto(story.Content),
 		CreatedAt: timestamppb.New(story.Created_at),
 		UpdatedAt: timestamppb.New(story.Updated_at),
@@ -55,7 +55,7 @@ func convertStoryElementToProto(content *model.StoryElement) *pb.StoryElement {
 	return &pb.StoryElement{
 		Type:            string(content.Type),
 		Text:            content.Text,
-		Url:             content.Url,
+		Url:             content.ImageUrl,
 		ImageStyles:     convertImageStylesToProto(content.ImageStyles),
 		Caption:         content.Caption,
 		AltText:         content.AltText,

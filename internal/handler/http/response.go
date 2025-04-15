@@ -5,3 +5,7 @@ type Response struct{
 	Message string `json:"message,omitempty"`
 	Metadata map[string]any `json:"metadata,omitempty"`
 }
+type ErrorResponse struct{
+	Error string `json:"error"`
+	Message string `json:"message,omitempty"`
+}

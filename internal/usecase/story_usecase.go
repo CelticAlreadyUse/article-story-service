@@ -11,17 +11,26 @@ import (
 
 type storyUsecase struct {
 	storyRepository model.StoryRepository
+	categoryRepository model.CategoriesRepository
 }
 
-func InitStoryUsecase(repo model.StoryRepository) model.StoryUsecase {
-	return &storyUsecase{storyRepository: repo}
+func InitStoryUsecase(storyRepo model.StoryRepository,categoryRepo model.CategoriesRepository) model.StoryUsecase {
+	return &storyUsecase{storyRepository: storyRepo,categoryRepository: categoryRepo}
 }
 
-func (u *storyUsecase) Create(ctx context.Context, story model.Story) (*model.Story, error) {
+func (u *storyUsecase) Create(ctx context.Context, body model.Story) (*model.Story, error) {
 	logrus.WithFields(logrus.Fields{
-		"data": story,
+		"data": body,
 	})
-	return u.storyRepository.Create(ctx, story)
+	_,err := u.categoryRepository.GetAllCategoriesByIds(ctx,body.Tags_ID)
+	if err !=nil{
+		return nil,errors.New("id category doesn't found")
+	}
+	story,err := u.storyRepository.Create(ctx, body)
+	if err !=nil{
+		return nil,err
+	}
+	return story,nil
 }
 func (u *storyUsecase) Delete(ctx context.Context, id primitive.ObjectID) error {
 	logrus.WithFields(logrus.Fields{
@@ -73,6 +82,12 @@ func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.
 	if err != nil {
 		return nil, err
 	}
+	category,err := u.categoryRepository.GetAllCategoriesByIds(ctx,story.Tags_ID)
+	if err != nil {
+		return nil, err
+	}
+	story.Tags_ID = nil
+	story.Tags = category
 	return story, nil
 }
 

@@ -28,6 +28,7 @@ type Story struct {
 	AuthorId      int64                  `protobuf:"varint,2,opt,name=author_id,json=authorId,proto3" json:"author_id,omitempty"`
 	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
 	Tags          []string               `protobuf:"bytes,4,rep,name=tags,proto3" json:"tags,omitempty"`
+	TagsId        []int64                `protobuf:"varint,8,rep,packed,name=tags_id,json=tagsId,proto3" json:"tags_id,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Content       []*StoryElement        `protobuf:"bytes,7,rep,name=content,proto3" json:"content,omitempty"`
@@ -89,6 +90,13 @@ func (x *Story) GetTitle() string {
 func (x *Story) GetTags() []string {
 	if x != nil {
 		return x.Tags
+	}
+	return nil
+}
+
+func (x *Story) GetTagsId() []int64 {
+	if x != nil {
+		return x.TagsId
 	}
 	return nil
 }
@@ -359,12 +367,13 @@ var File_pb_service_story_proto protoreflect.FileDescriptor
 const file_pb_service_story_proto_rawDesc = "" +
 	"\n" +
 	"\x16pb/service/story.proto\x12\n" +
-	"pb.service\x1a\x1apb/service/timestamp.proto\"\x88\x02\n" +
+	"pb.service\x1a\x1apb/service/timestamp.proto\"\xa1\x02\n" +
 	"\x05Story\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1b\n" +
 	"\tauthor_id\x18\x02 \x01(\x03R\bauthorId\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
-	"\x04tags\x18\x04 \x03(\tR\x04tags\x129\n" +
+	"\x04tags\x18\x04 \x03(\tR\x04tags\x12\x17\n" +
+	"\atags_id\x18\b \x03(\x03R\x06tagsId\x129\n" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +

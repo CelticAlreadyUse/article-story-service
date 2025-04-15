@@ -47,7 +47,10 @@ func (handler *storyHandler) CreateStory(c echo.Context) error {
 	}
 	story, err := handler.storyUsecase.Create(c.Request().Context(), *body)
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.NewHTTPError(http.StatusBadRequest,ErrorResponse{
+			Error: err.Error(),
+			Message: "failed to create story",
+		})
 	}
 	return c.JSON(http.StatusOK, Response{
 		Data:    story,
@@ -146,7 +149,6 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 		Message: message,
 	})
 }
-
 // for story to account
 func (handler *storyHandler) GetStoryByAccountID(c echo.Context) error {
 	accountId := c.Param("id")
