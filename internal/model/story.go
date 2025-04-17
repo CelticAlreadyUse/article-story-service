@@ -13,8 +13,6 @@ type StoryUsecase interface {
 	Update(ctx context.Context, id primitive.ObjectID, story Story) (*Story, int64, error)
 	GetAll(ctx context.Context, params SearchParams) ([]Story, string, error)
 	GetStoryByID(ctx context.Context, userID string) (*Story, error)
-
-	//Users and account
 	GetStoriesByUserID(ctx context.Context, id int64) ([]*Story, error)
 }
 type ParamsShowStories struct {
@@ -27,15 +25,13 @@ type StoryRepository interface {
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	Update(ctx context.Context, id primitive.ObjectID, story Story) (*Story, int64, error)
 	GetByID(ctx context.Context, id primitive.ObjectID) (*Story, error)
-
-	//Story and Account
 	GetStoriesByUserID(ctx context.Context, id int64) ([]*Story, error)
 }
 type Story struct {
 	ID         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	AuthorID   int64              `json:"author_id" bson:"author_id" validate:"required"`
 	Title      string             `json:"title" bson:"title" validate:"required"`
-	Tags_ID    []int64            `json:"tag_id,omitempty" bson:"tag_id" validate:"required"`
+	TagsID    []int64            `json:"tag_id,omitempty" bson:"tag_id" validate:"required"`
 	Tags       []*Category          `json:"tag_name,omitempty"`
 	Created_at time.Time          `json:"created_at" bson:"created_at"`
 	Updated_at time.Time          `json:"updated_at,omitempty" bson:"updated_at,omitempty"`

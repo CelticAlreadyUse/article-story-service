@@ -22,7 +22,7 @@ func (u *storyUsecase) Create(ctx context.Context, body model.Story) (*model.Sto
 	logrus.WithFields(logrus.Fields{
 		"data": body,
 	})
-	_,err := u.categoryRepository.GetAllCategoriesByIds(ctx,body.Tags_ID)
+	_,err := u.categoryRepository.GetAllCategoriesByIds(ctx,body.TagsID)
 	if err !=nil{
 		return nil,errors.New("id category doesn't found")
 	}
@@ -68,6 +68,33 @@ func (u *storyUsecase) GetAll(ctx context.Context, params model.SearchParams) ([
 		logrus.Error(err.Error())
 		return nil, "", err
 	}
+	tagIDSet := map[int64]struct{}{}
+
+	for _, story := range stories {
+		for _, tagID := range story.TagsID {
+			tagIDSet[tagID] = struct{}{}
+		}
+	}
+	
+	var tagIDs []int64
+	for id := range tagIDSet {
+		tagIDs = append(tagIDs, id)
+	}
+	categories,err := u.categoryRepository.GetAllCategoriesByIds(ctx,tagIDs)
+	if err !=nil{
+		return nil,"",err
+	}
+	catMap := make(map[int64]*model.Category)
+for _, cat := range categories {
+    catMap[cat.ID] = cat
+}
+for i := range stories {
+    for _, id := range stories[i].TagsID {
+        if cat, ok := catMap[id]; ok {
+            stories[i].Tags = append(stories[i].Tags, cat)
+        }
+    }
+}
 	return stories, nextcsr, nil
 }
 func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.Story, error) {
@@ -82,11 +109,11 @@ func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.
 	if err != nil {
 		return nil, err
 	}
-	category,err := u.categoryRepository.GetAllCategoriesByIds(ctx,story.Tags_ID)
+	category,err := u.categoryRepository.GetAllCategoriesByIds(ctx,story.TagsID)
 	if err != nil {
 		return nil, err
 	}
-	story.Tags_ID = nil
+	story.TagsID = nil
 	story.Tags = category
 	return story, nil
 }

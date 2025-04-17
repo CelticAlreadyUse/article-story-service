@@ -13,6 +13,7 @@ type CategoriesRepository interface {
 	GetAll(ctx context.Context, params CategoryParams) ([]*Category, error)
 	GetAllCategoriesByIds(ctx context.Context, id []int64) ([]*Category, error)
 }
+
 type CategoriesUsecases interface {
 	Create(ctx context.Context, body Category) (Category, error)
 	GetByID(ctx context.Context, id int64) (*Category, error)
