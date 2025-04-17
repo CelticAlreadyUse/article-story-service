@@ -6,6 +6,7 @@ import (
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/helper"
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
+	"github.com/labstack/gommon/log"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -14,11 +15,12 @@ import (
 )
 
 type StoryRepository struct {
-	db *mongo.Database
+	db    *mongo.Database
+	redis model.RedisClient
 }
 
-func InitStoryStruct(collection *mongo.Database) model.StoryRepository {
-	return &StoryRepository{db: collection}
+func InitStoryStruct(collection *mongo.Database, redis model.RedisClient) model.StoryRepository {
+	return &StoryRepository{db: collection, redis: redis}
 }
 
 func (r *StoryRepository) Create(ctx context.Context, story model.Story) (*model.Story, error) {
@@ -29,6 +31,12 @@ func (r *StoryRepository) Create(ctx context.Context, story model.Story) (*model
 	}
 	logrus.Info(res.InsertedID)
 	story.ID = res.InsertedID.(primitive.ObjectID)
+	go func(){
+		err := r.redis.HDelByBucketKey(context.Background(),storiesBucketKey)
+		if err !=nil{
+			log.Errorf("failed to delete data from redis %v",err)
+		}
+	}()
 	return &story, nil
 }
 func (u *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
@@ -49,6 +57,16 @@ func (u *StoryRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*
 	return row, nil
 }
 func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams) ([]model.Story, string, error) {
+	var stories []model.Story
+	cacheKey := newStoriesCacheKey(&params)
+	err := u.redis.HGet(ctx, storiesBucketKey, cacheKey, &stories)
+	if err == nil && len(stories) > 0 {
+	logrus.Info("GetAll: data served from redis")
+		return stories, "", nil
+	}
+	if err != nil {
+		log.Errorf("failed get data from redis, error: %v", err)
+	}
 	filter := bson.M{}
 	if params.Keywords != "" {
 		filter["title"] = bson.M{
@@ -90,7 +108,6 @@ func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams)
 	}
 	defer rows.Close(ctx)
 
-	var stories []model.Story
 	if err := rows.All(ctx, &stories); err != nil {
 		logrus.Error("cursor decode error: ", err)
 		return nil, "", err
@@ -101,6 +118,12 @@ func (u *StoryRepository) GetAll(ctx context.Context, params model.SearchParams)
 		nextCursor = helper.EncodeCursor(last.Created_at, last.ID)
 		stories = stories[:params.Limit]
 	}
+	if len(stories) >0{
+		if err := u.redis.HSet(ctx, storiesBucketKey, cacheKey, stories,10*time.Minute); err != nil {
+			logrus.Warnf("Failed to save to Redis cache: %v", err)
+		}
+	}
+	logrus.Info("GetAll: data served from MongoDB (cache miss)")
 
 	return stories, nextCursor, nil
 }

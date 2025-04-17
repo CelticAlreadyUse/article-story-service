@@ -35,6 +35,16 @@ func DBPass() string {
 func DBPort() string {
 	return viper.GetString("mysql.dbport")
 }
-func GRCPPORT() string{
+func GRCPPORT() string {
 	return viper.GetString("grpc.port")
 }
+func RedisHost() string {
+	return viper.GetString("redis.dbhost")
+}
+func RedisPort() string {
+	return viper.GetString("redis.dbport")
+}
+func RedisPass() string {
+	return viper.GetString("redis.dbpass")
+}
+

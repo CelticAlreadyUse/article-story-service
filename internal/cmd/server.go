@@ -11,6 +11,7 @@ import (
 	"github.com/CelticAlreadyUse/article-story-service/internal/config"
 	"github.com/CelticAlreadyUse/article-story-service/internal/database/mongodb"
 	mysqldb "github.com/CelticAlreadyUse/article-story-service/internal/database/mysql"
+	"github.com/CelticAlreadyUse/article-story-service/internal/database/redis"
 	grpchandler "github.com/CelticAlreadyUse/article-story-service/internal/handler/grpc"
 	http_handler "github.com/CelticAlreadyUse/article-story-service/internal/handler/http"
 	"github.com/CelticAlreadyUse/article-story-service/internal/repository"
@@ -27,10 +28,11 @@ var startServerCmd = &cobra.Command{
 	Short: "httpsrv is a command to run http server",
 	Run: func(cmd *cobra.Command, args []string) {
 		mongoConn, ctx, cancel := mongodb.Connect()
+		redisConn := redis.InitConnectRedis()
 		defer cancel()
 		defer mongoConn.Client().Disconnect(ctx)
 		mysqlConn := mysqldb.MysqlConnection()
-		storyRepository := repository.InitStoryStruct(mongoConn)
+		storyRepository := repository.InitStoryStruct(mongoConn,redisConn)
 		categoryRepository := repository.InitCategoryRepository(mysqlConn)
 		storyUsecase := usecase.InitStoryUsecase(storyRepository,categoryRepository)
 		categoryUsecase := usecase.InitCategoryUsecase(categoryRepository)
