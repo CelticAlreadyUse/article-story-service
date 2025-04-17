@@ -5,12 +5,6 @@ package pb.service;
 option go_package = "pb/service";
 import "pb/service/story.proto";
 import "pb/service/story_request.proto";
-import "pb/service/empty.proto";
 service StoryService {
-    rpc FindAll(StoryFindAllRequest) returns (Stories);
-    rpc FindByID(FindStoryByIDRequest) returns (Story);
-    rpc Create(CreateStoryRequest) returns (Story);
-    rpc Update(CreateStoryRequest) returns (Story);
-    rpc Delete(DeleteStoryRequest) returns (google.protobuf.Empty);
-    rpc StoriesByUserID(GetStoriesByUserIDRequest) returns (Stories);
+    rpc FindAllStoriesByUserID(GetStoriesByUserIDRequest) returns (Stories);
 }

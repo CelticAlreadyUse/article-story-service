@@ -35,3 +35,6 @@ func DBPass() string {
 func DBPort() string {
 	return viper.GetString("mysql.dbport")
 }
+func GRCPPORT() string{
+	return viper.GetString("grpc.port")
+}
