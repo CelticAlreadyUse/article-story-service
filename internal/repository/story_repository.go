@@ -23,6 +23,7 @@ type CachedStoryResult struct {
 	Stories    []model.Story `json:"stories"`
 	NextCursor string        `json:"next_cursor"`
 }
+
 func InitStoryStruct(collection *mongo.Database, redis model.RedisClient) model.StoryRepository {
 	return &StoryRepository{db: collection, redis: redis}
 }
@@ -54,10 +55,23 @@ func (u *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) err
 }
 func (u *StoryRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*model.Story, error) {
 	var row *model.Story
-	err := u.db.Collection("story_service").FindOne(ctx, bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&row)
+	cacheKey := newStoryByIDCacheKey(id)
+	err := u.redis.Get(ctx, cacheKey, row)
 	if err != nil {
 		return nil, err
 	}
+	if row.ID != primitive.NilObjectID {
+		return row, nil
+	}
+	err = u.db.Collection("story_service").FindOne(ctx, bson.D{primitive.E{Key: "_id", Value: id}}).Decode(&row)
+	if err != nil {
+		return nil, err
+	}
+	err = u.redis.Set(ctx, cacheKey, row, 10*time.Minute)
+	if err != nil {
+		log.Errorf("failed set data to redis, error: %v", err)
+	}
+
 	return row, nil
 }
 func (u *StoryRepository) GetAll(ctx context.Context, params *model.SearchParams) ([]model.Story, string, error) {
@@ -131,8 +145,8 @@ func (u *StoryRepository) GetAll(ctx context.Context, params *model.SearchParams
 		stories = stories[:params.Limit]
 	}
 	if len(stories) > 0 {
-		if err := u.redis.HSet(ctx, storiesBucketKey, cacheKey,CachedStoryResult{
-			Stories: stories,
+		if err := u.redis.HSet(ctx, storiesBucketKey, cacheKey, CachedStoryResult{
+			Stories:    stories,
 			NextCursor: nextCursor,
 		}, 10*time.Minute); err != nil {
 			logrus.Warnf("Failed to save to Redis cache: %v", err)
