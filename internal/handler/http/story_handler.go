@@ -142,7 +142,6 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 	var body *model.Story
 	id := c.Param("id")
 	err := c.Bind(&body)
-	fmt.Println(body)
 	if err != nil {
 		return echo.NewHTTPError(echo.ErrBadRequest.Code, "failed to get body")
 	}

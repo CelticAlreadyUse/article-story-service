@@ -142,7 +142,6 @@ func (u *StoryRepository) GetAll(ctx context.Context, params *model.SearchParams
 
 	return stories, nextCursor, nil
 }
-
 func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, body model.Story) (*model.Story, int64, error) {
 	body.Updated_at = time.Now()
 	newStory := bson.D{
@@ -159,6 +158,16 @@ func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, bod
 		logrus.Error(err)
 		return nil, 0, err
 	}
+	go func() {
+		err = u.redis.Del(context.Background(), newStoryByIDCacheKey(id))
+		if err != nil {
+			log.Errorf("failed when delete data from redis, error: %v", err)
+		}
+		err = u.redis.HDelByBucketKey(context.Background(), storiesBucketKey)
+		if err != nil {
+			log.Errorf("failed when delete data from redis, error: %v", err)
+		}
+	}()
 
 	return &body, results.ModifiedCount, nil
 }

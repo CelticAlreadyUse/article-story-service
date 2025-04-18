@@ -5,11 +5,12 @@ import (
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const storiesBucketKey = "stories"
 
-func newStoryByIDCacheKey(id int) string {
+func newStoryByIDCacheKey(id primitive.ObjectID) string {
 	return fmt.Sprintf("story:%d", id)
 }
 
