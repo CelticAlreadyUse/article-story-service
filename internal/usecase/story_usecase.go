@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
 	"github.com/sirupsen/logrus"
@@ -10,27 +11,35 @@ import (
 )
 
 type storyUsecase struct {
-	storyRepository model.StoryRepository
+	storyRepository    model.StoryRepository
 	categoryRepository model.CategoriesRepository
 }
 
-func InitStoryUsecase(storyRepo model.StoryRepository,categoryRepo model.CategoriesRepository) model.StoryUsecase {
-	return &storyUsecase{storyRepository: storyRepo,categoryRepository: categoryRepo}
+func InitStoryUsecase(storyRepo model.StoryRepository, categoryRepo model.CategoriesRepository) model.StoryUsecase {
+	return &storyUsecase{storyRepository: storyRepo, categoryRepository: categoryRepo}
 }
 
 func (u *storyUsecase) Create(ctx context.Context, body model.Story) (*model.Story, error) {
 	logrus.WithFields(logrus.Fields{
 		"data": body,
 	})
-	_,err := u.categoryRepository.GetAllCategoriesByIds(ctx,body.TagsID)
-	if err !=nil{
-		return nil,errors.New("id category doesn't found")
+	var bdTagsInt []int64
+	for _, tag := range body.TagsID {
+		tagInt, err := strconv.Atoi(tag)
+		if err != nil {
+			return nil, errors.New("id type wrong")
+		}
+		bdTagsInt = append(bdTagsInt, int64(tagInt))
 	}
-	story,err := u.storyRepository.Create(ctx, body)
-	if err !=nil{
-		return nil,err
+	_, err := u.categoryRepository.GetAllCategoriesByIds(ctx, bdTagsInt)
+	if err != nil {
+		return nil, errors.New("id category doesn't found")
 	}
-	return story,nil
+	story, err := u.storyRepository.Create(ctx, body)
+	if err != nil {
+		return nil, err
+	}
+	return story, nil
 }
 func (u *storyUsecase) Delete(ctx context.Context, id primitive.ObjectID) error {
 	logrus.WithFields(logrus.Fields{
@@ -59,7 +68,7 @@ func (u *storyUsecase) Update(ctx context.Context, id primitive.ObjectID, storyB
 	}
 	return story, amount, nil
 }
-func (u *storyUsecase) GetAll(ctx context.Context, params model.SearchParams) ([]model.Story, string, error) {
+func (u *storyUsecase) GetAll(ctx context.Context, params *model.SearchParams) ([]model.Story, string, error) {
 	logrus.WithFields(logrus.Fields{
 		"params": params,
 	})
@@ -68,33 +77,41 @@ func (u *storyUsecase) GetAll(ctx context.Context, params model.SearchParams) ([
 		logrus.Error(err.Error())
 		return nil, "", err
 	}
-	tagIDSet := map[int64]struct{}{}
+	tagIDSet := map[string]struct{}{}
 
 	for _, story := range stories {
 		for _, tagID := range story.TagsID {
 			tagIDSet[tagID] = struct{}{}
 		}
 	}
-	
+
 	var tagIDs []int64
 	for id := range tagIDSet {
-		tagIDs = append(tagIDs, id)
+		idInt, err := strconv.Atoi(id)
+		if err != nil {
+			return nil, "", err
+		}
+		tagIDs = append(tagIDs, int64(idInt))
 	}
-	categories,err := u.categoryRepository.GetAllCategoriesByIds(ctx,tagIDs)
-	if err !=nil{
-		return nil,"",err
+	categories, err := u.categoryRepository.GetAllCategoriesByIds(ctx, tagIDs)
+	if err != nil {
+		return nil, "", err
 	}
 	catMap := make(map[int64]*model.Category)
-for _, cat := range categories {
-    catMap[cat.ID] = cat
-}
-for i := range stories {
-    for _, id := range stories[i].TagsID {
-        if cat, ok := catMap[id]; ok {
-            stories[i].Tags = append(stories[i].Tags, cat)
-        }
-    }
-}
+	for _, cat := range categories {
+		catMap[cat.ID] = cat
+	}
+	for i := range stories {
+		for _, id := range stories[i].TagsID {
+			idInt, err := strconv.Atoi(id)
+			if err != nil {
+				return nil, "", err
+			}
+			if cat, ok := catMap[int64(idInt)]; ok {
+				stories[i].Tags = append(stories[i].Tags, cat)
+			}
+		}
+	}
 	return stories, nextcsr, nil
 }
 func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.Story, error) {
@@ -109,7 +126,15 @@ func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.
 	if err != nil {
 		return nil, err
 	}
-	category,err := u.categoryRepository.GetAllCategoriesByIds(ctx,story.TagsID)
+	var bdTagsInt []int64
+	for _, tag := range story.TagsID {
+		tagInt, err := strconv.Atoi(tag)
+		if err != nil {
+			return nil, errors.New("id type wrong")
+		}
+		bdTagsInt = append(bdTagsInt, int64(tagInt))
+	}
+	category, err := u.categoryRepository.GetAllCategoriesByIds(ctx, bdTagsInt)
 	if err != nil {
 		return nil, err
 	}

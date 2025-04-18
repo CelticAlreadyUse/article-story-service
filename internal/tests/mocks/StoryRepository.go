@@ -54,11 +54,11 @@ func (_m *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) er
 }
 
 // GetAll provides a mock function with given fields: ctx, params
-func (_m *StoryRepository) GetAll(ctx context.Context, params model.SearchParams) ([]model.Story, string, error) {
+func (_m *StoryRepository) GetAll(ctx context.Context, params *model.SearchParams) ([]model.Story, string, error) {
 	ret := _m.Called(ctx, params)
 
 	var r0 []model.Story
-	if rf, ok := ret.Get(0).(func(context.Context, model.SearchParams) []model.Story); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.SearchParams) []model.Story); ok {
 		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
@@ -67,14 +67,14 @@ func (_m *StoryRepository) GetAll(ctx context.Context, params model.SearchParams
 	}
 
 	var r1 string
-	if rf, ok := ret.Get(1).(func(context.Context, model.SearchParams) string); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.SearchParams) string); ok {
 		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Get(1).(string)
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, model.SearchParams) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, *model.SearchParams) error); ok {
 		r2 = rf(ctx, params)
 	} else {
 		r2 = ret.Error(2)

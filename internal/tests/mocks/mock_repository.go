@@ -27,7 +27,7 @@ func (m *MockStoryRepo) GetByID(ctx context.Context, id primitive.ObjectID) (*mo
     return args.Get(0).(*model.Story), args.Error(1)
 }
 
-func (m *MockStoryRepo) GetAll(ctx context.Context, params model.SearchParams) ([]model.Story, string, error) {
+func (m *MockStoryRepo) GetAll(ctx context.Context, params *model.SearchParams) ([]model.Story, string, error) {
     args := m.Called(ctx, params)
     return args.Get(0).([]model.Story), args.String(1), args.Error(2)
 }

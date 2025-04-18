@@ -22,8 +22,8 @@ func TestCreateStory_Success(t *testing.T) {
 	ptrStr := &text
 	dummyStory := model.Story{
 		Title:   "My Story",
-		TagsID:  []int64{1, 2},
-		Content: []*model.StoryElement{&model.StoryElement{Text: ptrStr, Type: "paragraph"}},
+		TagsID:  []string{"1", "2"},
+		Content: []*model.StoryElement{{Text: ptrStr, Type: "paragraph"}},
 	}
 	categoryRepo.On("GetAllCategoriesByIds", mock.Anything, dummyStory.TagsID).
 		Return([]*model.Category{{ID: 1}, {ID: 2}}, nil)
@@ -48,8 +48,8 @@ func TestCreateStory_CategoryNotFound(t *testing.T) {
 	ptrStr := &text
 	dummyStory := model.Story{
 		Title:   "Unknown Category Story",
-		TagsID:  []int64{999},
-		Content: []*model.StoryElement{&model.StoryElement{Text: ptrStr}},
+		TagsID:  []string{"999"},
+		Content: []*model.StoryElement{{Text: ptrStr,Type: "paragraph"}},
 	}
 
 	categoryRepo.On("GetAllCategoriesByIds", mock.Anything, dummyStory.TagsID).
