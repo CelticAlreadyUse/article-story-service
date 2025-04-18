@@ -7,10 +7,10 @@ import (
 )
 
 type SearchParams struct{
-	Tags []string `params:"tags"`
-	Keywords string `params:"keywords"`
-	Limit int64 `params:"limit" validate:"number"`
-	Cursor string `params:"cursor"`
+	Tags []string `params:"t"`
+	Keywords string `params:"s"`
+	Limit int64 `params:"l" validate:"number"`
+	Cursor string `params:"c"`
 }
 type CategoryParams struct{
 	Alph string `params:"alph"`

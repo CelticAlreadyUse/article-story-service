@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
+	"github.com/sirupsen/logrus"
 )
 
 const storiesBucketKey = "stories"
@@ -13,20 +14,21 @@ func newStoryByIDCacheKey(id int) string {
 }
 
 func newStoriesCacheKey(opt *model.SearchParams) string {
-	var search, cursor string
+	logrus.Info(opt)
+	var keywords, cursor string
 	var tags []string
 	var limit int64
 	if opt != nil && opt.Keywords != "" {
-		search = opt.Keywords
+		keywords = opt.Keywords
 	}
-	if opt != nil && opt.Limit <= 1 {
+	if opt != nil && opt.Limit > 0 {
 		limit = opt.Limit
 	}
-	if opt != nil && len(opt.Tags) != 0 {
+	if opt != nil && len(opt.Tags) > 0 {
 		tags = opt.Tags
 	}
 	if opt != nil && opt.Cursor != "" {
 		cursor = opt.Cursor
 	}
-	return fmt.Sprintf("stories:search:%s:tags:%s:cursor:%s:limit:%v", search, tags, cursor, limit)
+	return fmt.Sprintf("stories:search:%s:tags:%s:cursor:%s:limit:%v", keywords, tags, cursor, limit)
 }

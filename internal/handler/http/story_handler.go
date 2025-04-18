@@ -15,6 +15,7 @@ import (
 type storyHandler struct {
 	storyUsecase model.StoryUsecase
 }
+
 func InitStoryHandler(storyUsecase model.StoryUsecase) *storyHandler {
 	return &storyHandler{storyUsecase: storyUsecase}
 }
@@ -23,10 +24,10 @@ var Validate = validator.New()
 
 func (handler *storyHandler) RegisterRoute(e *echo.Echo) {
 	g := e.Group("/v1/story")
-	g.GET("/:id", handler.GetStoryByID) 
-	g.POST("", handler.CreateStory)   
-	g.GET("", handler.GetStories)  
-	g.DELETE("/:id", handler.DeleteStoryByID) 
+	g.GET("/:id", handler.GetStoryByID)
+	g.POST("", handler.CreateStory)
+	g.GET("", handler.GetStories)
+	g.DELETE("/:id", handler.DeleteStoryByID)
 	g.PUT("/:id", handler.UpdateStory)
 }
 
@@ -39,7 +40,7 @@ func (handler *storyHandler) CreateStory(c echo.Context) error {
 	}
 	err = Validate.Struct(body)
 
-	if len(body.Content) == 0{
+	if len(body.Content) == 0 {
 		return echo.NewHTTPError(http.StatusBadRequest, "content is required")
 	}
 	if err != nil {
@@ -47,8 +48,8 @@ func (handler *storyHandler) CreateStory(c echo.Context) error {
 	}
 	story, err := handler.storyUsecase.Create(c.Request().Context(), *body)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest,ErrorResponse{
-			Error: err.Error(),
+		return echo.NewHTTPError(http.StatusBadRequest, ErrorResponse{
+			Error:   err.Error(),
 			Message: "failed to create story",
 		})
 	}
@@ -71,34 +72,47 @@ func (handler *storyHandler) GetStoryByID(c echo.Context) error {
 func (handler *storyHandler) GetStories(c echo.Context) error {
 	var Params model.SearchParams
 
-	categoryParams := c.QueryParams()["tags"]
+	categoryParams := c.QueryParams()["t"]
 	if len(categoryParams) > 5 {
 		return echo.NewHTTPError(http.StatusBadRequest, "Maximum of 5 tags allowed")
 	}
 	Params.Tags = []string(categoryParams)
 
-	keyWordParm := c.QueryParam("keyword")
+	keyWordParm := c.QueryParam("s")
 	if keyWordParm != "" {
 		Params.Keywords = keyWordParm
 	}
-	limitParam := c.QueryParam("limit")
+	limitParam := c.QueryParam("l")
 	if limitParam != "" {
 		limitInt, err := strconv.Atoi(limitParam)
 		if err != nil {
 			return echo.ErrInternalServerError
 		}
 		Params.Limit = int64(limitInt)
+	} else {
+		Params.Limit = 10
 	}
-	cursorParam := c.QueryParam("cursor")
+	cursorParam := c.QueryParam("c")
 	if cursorParam != "" {
 		Params.Cursor = cursorParam
 	}
-	stories, nextcsr, err := handler.storyUsecase.GetAll(c.Request().Context(), Params)
+	stories, nextcsr, err := handler.storyUsecase.GetAll(c.Request().Context(), &Params)
 	if err != nil {
 		return echo.ErrBadRequest
 	}
 	if stories == nil {
 		return echo.ErrNotFound
+	}
+	hasMore := false
+	if len(stories) < int(Params.Limit) {
+		hasMore = false
+	} else {
+		// Menggunakan nextCursor untuk mengecek halaman berikutnya
+		if nextcsr != "" {
+			hasMore = true
+		} else {
+			hasMore = false
+		}
 	}
 	return c.JSON(http.StatusOK, Response{
 		Data:    stories,
@@ -106,7 +120,7 @@ func (handler *storyHandler) GetStories(c echo.Context) error {
 		Metadata: map[string]any{
 			"length":      len(stories),
 			"next_cursor": nextcsr,
-			"has_more":    len(stories) == int(Params.Limit),
+			"has_more":    hasMore,
 		},
 	})
 }
@@ -136,7 +150,7 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "failed to get an id")
 	}
-	story,storyCount, err := handler.storyUsecase.Update(c.Request().Context(), primiId, *body)
+	story, storyCount, err := handler.storyUsecase.Update(c.Request().Context(), primiId, *body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -145,10 +159,11 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 	}
 	message := fmt.Sprintf("sucessfully updated %v items", storyCount)
 	return c.JSON(http.StatusOK, Response{
-		Data: story,
+		Data:    story,
 		Message: message,
 	})
 }
+
 // for story to account
 func (handler *storyHandler) GetStoryByAccountID(c echo.Context) error {
 	accountId := c.Param("id")
