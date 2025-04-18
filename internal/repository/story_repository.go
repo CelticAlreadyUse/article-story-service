@@ -47,10 +47,21 @@ func (r *StoryRepository) Create(ctx context.Context, story model.Story) (*model
 func (u *StoryRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	opts := bson.D{primitive.E{Key: "_id", Value: id}}
 	_, err := u.db.Collection("story_service").DeleteOne(ctx, opts)
+
 	if err != nil {
 		logrus.Error(err.Error())
 		return err
 	}
+	go func() {
+		err = u.redis.Del(context.Background(), newStoryByIDCacheKey(id))
+		if err != nil {
+			log.Errorf("failed when delete data from redis, error: %v", err)
+		}
+		err = u.redis.HDelByBucketKey(context.Background(), storiesBucketKey)
+		if err != nil {
+			log.Errorf("failed when delete data from redis, error: %v", err)
+		}
+	}()
 	return nil
 }
 func (u *StoryRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*model.Story, error) {
