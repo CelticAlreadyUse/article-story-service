@@ -145,12 +145,8 @@ func (u *StoryRepository) GetAll(ctx context.Context, params *model.SearchParams
 		logrus.Error("cursor decode error: ", err)
 		return nil, "", err
 	}
+	logrus.Infof("Len Stories: %d,limit:%d",len(stories),params.Limit)
 	if len(stories) > int(params.Limit) {
-		last := stories[params.Limit-1]
-		nextCursor = helper.EncodeCursor(last.Created_at, last.ID)
-		stories = stories[:params.Limit]
-	}
-	if len(stories) > int(params.Limit) && params.Limit > 0 {
 		last := stories[params.Limit-1]
 		nextCursor = helper.EncodeCursor(last.Created_at, last.ID)
 		stories = stories[:params.Limit]
@@ -197,16 +193,66 @@ func (u *StoryRepository) Update(ctx context.Context, id primitive.ObjectID, bod
 	return &body, results.ModifiedCount, nil
 }
 
-func (u *StoryRepository) GetStoriesByUserID(ctx context.Context, author_id int64) ([]*model.Story, error) {
-	filter := bson.M{"author_id": author_id}
-	storyDB, err := u.db.Collection("story_service").Find(ctx, filter)
+func (u *StoryRepository) GetStoriesByUserID(ctx context.Context, author_id int64, cursor string) ([]model.Story, string, error) {
+	var stories []model.Story
+	var nextCursor string
+	var chace CachedStoryResult
+	limit := 8
+	cacheKey := newStoryByUseridKey(author_id, cursor)
+	err := u.redis.HGet(ctx, storiesBucketKey, cacheKey, &chace)
 	if err != nil {
-		return nil, err
+		log.Errorf("failed get data from redis, error: %v", err)
 	}
-	defer storyDB.Close(ctx)
-	var storeis []*model.Story
-	if err = storyDB.All(ctx, &storeis); err != nil {
-		return nil, err
+	if err == nil && len(chace.Stories) > 0 {
+		logrus.Info("GetAll: data served from redis")
+		return chace.Stories, chace.NextCursor, nil
 	}
-	return storeis, nil
+	limitQuery := limit+1
+	filter := bson.M{"author_id": author_id}
+	if cursor != "" {
+		cursor, err := helper.DecodeCursor(cursor)
+		if err != nil {
+			logrus.Error("decode cursor error: ", err)
+			return nil, "", err
+		}
+		filter["$or"] = []bson.M{
+			{"created_at": bson.M{"$lt": cursor.Time}},
+			{
+				"created_at": cursor.Time,
+				"_id":        bson.M{"$lt": cursor.ID},
+			},
+		}
+	}
+	opts := options.Find().
+		SetSort(bson.D{
+			{Key: "created_at", Value: -1},
+			{Key: "_id", Value: -1},
+		}).
+		SetLimit(int64(limitQuery))
+	rows, err := u.db.Collection("story_service").Find(ctx, filter, opts)
+	if err != nil {
+		logrus.Error("find error: ", err)
+		return nil, "", err
+	}
+	defer rows.Close(ctx)
+	if err := rows.All(ctx, &stories); err != nil {
+		logrus.Error("cursor decode error: ", err)
+		return nil, "", err
+	}
+	logrus.Info(len(stories))
+	logrus.Info(limit)
+	if len(stories) > int(limit) {
+		last := stories[limit-1]
+		nextCursor = helper.EncodeCursor(last.Created_at, last.ID)
+		stories = stories[:limit]
+	}
+	if len(stories) > 0 {
+		if err := u.redis.HSet(ctx, storiesBucketKey, cacheKey, CachedStoryResult{
+			Stories:    stories,
+			NextCursor: nextCursor,
+		}, 10*time.Minute); err != nil {
+			logrus.Warnf("Failed to save to Redis cache: %v", err)
+		}
+	}
+	return stories, nextCursor, nil
 }

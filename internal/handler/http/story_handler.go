@@ -29,6 +29,7 @@ func (handler *storyHandler) RegisterRoute(e *echo.Echo) {
 	g.GET("", handler.GetStories)
 	g.DELETE("/:id", handler.DeleteStoryByID)
 	g.PUT("/:id", handler.UpdateStory)
+	g.GET("/user/:id",handler.GetStoryByUserID)
 }
 
 // For story to user
@@ -107,7 +108,6 @@ func (handler *storyHandler) GetStories(c echo.Context) error {
 	if len(stories) < int(Params.Limit) {
 		hasMore = false
 	} else {
-		// Menggunakan nextCursor untuk mengecek halaman berikutnya
 		if nextcsr != "" {
 			hasMore = true
 		} else {
@@ -164,13 +164,16 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 }
 
 // for story to account
-func (handler *storyHandler) GetStoryByAccountID(c echo.Context) error {
+func (handler *storyHandler) GetStoryByUserID(c echo.Context) error {
 	accountId := c.Param("id")
 	idInt, err := strconv.Atoi(accountId)
+	cursor := c.QueryParam("c")
+	limit := 8
+	hasMore := false
 	if err != nil {
 		return echo.ErrInternalServerError
 	}
-	stories, err := handler.storyUsecase.GetStoriesByUserID(c.Request().Context(), int64(idInt))
+	stories,nextCsr, err := handler.storyUsecase.GetStoriesByUserID(c.Request().Context(),int64(idInt),cursor)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -178,8 +181,22 @@ func (handler *storyHandler) GetStoryByAccountID(c echo.Context) error {
 		return echo.NewHTTPError(echo.ErrNotFound.Code, "there is no stories for this users.")
 	}
 	messageRes := fmt.Sprintf("Sucesfully get user %v story", idInt)
+	if len(stories) < int(limit	) {
+		hasMore = false
+	} else {
+		if nextCsr != "" {
+			hasMore = true
+		} else {
+			hasMore = false
+		}
+	}
 	return c.JSON(http.StatusOK, Response{
 		Data:    stories,
-		Message: messageRes,
+		Metadata: map[string]any{
+			"message": messageRes,
+			"length":      len(stories),
+			"next_cursor": nextCsr,
+			"has_more":    hasMore,
+		},
 	})
 }

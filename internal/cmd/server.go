@@ -12,11 +12,11 @@ import (
 	"github.com/CelticAlreadyUse/article-story-service/internal/database/mongodb"
 	mysqldb "github.com/CelticAlreadyUse/article-story-service/internal/database/mysql"
 	"github.com/CelticAlreadyUse/article-story-service/internal/database/redis"
-	grpchandler "github.com/CelticAlreadyUse/article-story-service/internal/handler/grpc"
+	// grpchandler "github.com/CelticAlreadyUse/article-story-service/internal/handler/grpc"
 	http_handler "github.com/CelticAlreadyUse/article-story-service/internal/handler/http"
 	"github.com/CelticAlreadyUse/article-story-service/internal/repository"
 	"github.com/CelticAlreadyUse/article-story-service/internal/usecase"
-	pb "github.com/CelticAlreadyUse/article-story-service/pb/service"
+	// pb "github.com/CelticAlreadyUse/article-story-service/pb/service"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -54,8 +54,8 @@ var startServerCmd = &cobra.Command{
 		go func() {
 			defer wg.Done()
 			grpcServer := grpc.NewServer()
-			storyHandler := grpchandler.InitStoryGrpcHandler(storyUsecase)
-			pb.RegisterStoryServiceServer(grpcServer, storyHandler)
+			// storyHandler := grpchandler.InitStoryGrpcHandler(storyUsecase)
+			// pb.RegisterStoryServiceServer(grpcServer, storyHandler)
 			port := fmt.Sprintf(":%v", config.GRCPPORT())
 			httpListerner, err := net.Listen("tcp", port)
 			if err != nil {

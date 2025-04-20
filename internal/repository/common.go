@@ -13,8 +13,8 @@ const storiesBucketKey = "stories"
 func newStoryByIDCacheKey(id primitive.ObjectID) string {
 	return fmt.Sprintf("story:%d", id)
 }
-func newStoryByUseridKey(id int64) string {
-	return fmt.Sprintf("user_id:%d", id)
+func newStoryByUseridKey(id int64, cursor string) string {
+	return fmt.Sprintf("user_id:%dcursor:%s", id,cursor)
 }
 func newStoriesCacheKey(opt *model.SearchParams) string {
 	logrus.Info(opt)

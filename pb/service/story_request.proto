@@ -4,4 +4,5 @@ package pb.service;
 option go_package="pb/service";
 message GetStoriesByUserIDRequest{
     int64 id = 1;
+    string cursor = 2;
 }   

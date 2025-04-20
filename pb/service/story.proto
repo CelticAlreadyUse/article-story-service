@@ -25,6 +25,15 @@ message Story {
   message Stories {
     repeated Story Stories =1;
   }
+  message StoriesResponse{
+    Stories stories =1 ;
+    Metadata metadata = 2;
+  }
+  message Metadata{
+    string NextCursor = 1;
+    int64 length = 2;
+    bool  hasMore = 3;
+  }
 message ParagraphStyles {
     string font_size = 1;
     string font_style = 2;

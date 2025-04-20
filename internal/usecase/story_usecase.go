@@ -143,14 +143,17 @@ func (u *storyUsecase) GetStoryByID(ctx context.Context, userID string) (*model.
 	return story, nil
 }
 
-func (u *storyUsecase) GetStoriesByUserID(ctx context.Context, id int64) ([]*model.Story, error) {
+func (u *storyUsecase) GetStoriesByUserID(ctx context.Context, id int64, cursor string) ([]model.Story, string, error) {
 	logrus.WithFields(logrus.Fields{
 		"user_id": id,
 	})
-	stories, err := u.storyRepository.GetStoriesByUserID(ctx, id)
+	stories, cursor, err := u.storyRepository.GetStoriesByUserID(ctx, id, cursor)
 	if err != nil {
 		logrus.Error(err)
-		return nil, err
+		return nil, "", err
 	}
-	return stories, nil
+	if len(stories) == 0 {
+		return nil, "", errors.New("User doesn't Have any story")
+	}
+	return stories, cursor, nil
 }
