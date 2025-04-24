@@ -167,13 +167,10 @@ func (handler *storyHandler) UpdateStory(c echo.Context) error {
 func (handler *storyHandler) GetStoryByUserID(c echo.Context) error {
 	accountId := c.Param("id")
 	idInt, err := strconv.Atoi(accountId)
-	cursor := c.QueryParam("c")
-	limit := 8
-	hasMore := false
 	if err != nil {
 		return echo.ErrInternalServerError
 	}
-	stories,nextCsr, err := handler.storyUsecase.GetStoriesByUserID(c.Request().Context(),int64(idInt),cursor)
+	stories, err := handler.storyUsecase.GetStoriesByUserID(c.Request().Context(),int64(idInt))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -181,22 +178,9 @@ func (handler *storyHandler) GetStoryByUserID(c echo.Context) error {
 		return echo.NewHTTPError(echo.ErrNotFound.Code, "there is no stories for this users.")
 	}
 	messageRes := fmt.Sprintf("Sucesfully get user %v story", idInt)
-	if len(stories) < int(limit	) {
-		hasMore = false
-	} else {
-		if nextCsr != "" {
-			hasMore = true
-		} else {
-			hasMore = false
-		}
-	}
+
 	return c.JSON(http.StatusOK, Response{
 		Data:    stories,
-		Metadata: map[string]any{
-			"message": messageRes,
-			"length":      len(stories),
-			"next_cursor": nextCsr,
-			"has_more":    hasMore,
-		},
+		Message: messageRes,
 	})
 }

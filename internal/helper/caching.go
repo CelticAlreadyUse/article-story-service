@@ -1,23 +1,20 @@
-package repository
+package helper
 
 import (
 	"fmt"
 
 	"github.com/CelticAlreadyUse/article-story-service/internal/model"
-	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+const StoriesBucketKey = "stories"
 
-const storiesBucketKey = "stories"
-
-func newStoryByIDCacheKey(id primitive.ObjectID) string {
+func NewStoryByIDCacheKey(id primitive.ObjectID) string {
 	return fmt.Sprintf("story:%d", id)
 }
-func newStoryByUseridKey(id int64, cursor string) string {
-	return fmt.Sprintf("user_id:%dcursor:%s", id,cursor)
+func NewStoryByUseridKey(id int64) string {
+	return fmt.Sprintf("user_id:%d", id)
 }
-func newStoriesCacheKey(opt *model.SearchParams) string {
-	logrus.Info(opt)
+func NewStoriesCacheKey(opt *model.SearchParams) string {
 	var keywords, cursor string
 	var tags []string
 	var limit int64

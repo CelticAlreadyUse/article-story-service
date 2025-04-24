@@ -7,27 +7,23 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type RedisClient interface {
-	Set(ctx context.Context, key string, data any, exp time.Duration) error
-	Get(ctx context.Context, key string, data any) error
-	Del(ctx context.Context, keys ...string) error
-	HSet(ctx context.Context, bucketKey, key string, data any, exp time.Duration) error
-	HGet(ctx context.Context, bucketKey, key string, data any) error
-	HDelByBucketKey(ctx context.Context, bucketKey string) error
-	HDelByBucketKeyAndKeys(ctx context.Context, bucketKey string, keys ...string) error
-}
-
 type StoryUsecase interface {
 	Create(ctx context.Context, Story Story) (*Story, error)
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	Update(ctx context.Context, id primitive.ObjectID, story Story) (*Story, int64, error)
 	GetAll(ctx context.Context, params *SearchParams) ([]Story, string, error)
 	GetStoryByID(ctx context.Context, userID string) (*Story, error)
-	GetStoriesByUserID(ctx context.Context, id int64,cursor string) ([]Story, string, error)
+	GetStoriesByUserID(ctx context.Context, id int64) ([]*Story, error)
 }
-type ParamsShowStories struct {
-	Limit  int
-	Offset int
+type CacheRepository interface {
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+	Get(ctx context.Context, key string, dest interface{}) error
+	Delete(ctx context.Context, key string) error
+
+	HSet(ctx context.Context, hash string, field string, value interface{},time time.Duration) error
+	HGet(ctx context.Context, hash string, field string, dest interface{}) error
+	HDel(ctx context.Context, hash string, fields ...string) error
+	HGetAll(ctx context.Context, hash string) (map[string]string, error)
 }
 type StoryRepository interface {
 	Create(ctx context.Context, story Story) (*Story, error)
@@ -35,7 +31,7 @@ type StoryRepository interface {
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	Update(ctx context.Context, id primitive.ObjectID, story Story) (*Story, int64, error)
 	GetByID(ctx context.Context, id primitive.ObjectID) (*Story, error)
-	GetStoriesByUserID(ctx context.Context, id int64,cursor string) ([]Story, string, error)
+	GetStoriesByUserID(ctx context.Context, id int64) ([]*Story, error)
 }
 type Story struct {
 	ID         primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
